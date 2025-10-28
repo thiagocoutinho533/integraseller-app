@@ -53,6 +53,7 @@ export default function LoginPage() {
 
         <div style={{ marginTop: "1rem", fontSize: 14, textAlign: "center" }}>
           <a href="#" style={{ color: "#6366f1" }}>Esqueci minha senha</a>
+                 <a href="#" style={{ color: "#6366f1" }}>Cadastre-se</a>
         </div>
       </div>
     </div>
