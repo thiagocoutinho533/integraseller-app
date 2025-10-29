@@ -1,3 +1,4 @@
+// src/server.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -8,11 +9,18 @@ import passwordResetRoutes from "./passwordReset.routes.js";
 
 const app = express();
 
-// ajuste CORS pro teu frontend
-app.use(cors({
-  origin: true, // depois em produção podemos travar p/ "https://integraseller.com.br"
-  credentials: true,
-}));
+// CORS: libera só seu domínio em produção
+app.use(
+  cors({
+    origin: [
+      "https://integraseller.com.br",
+      "https://www.integraseller.com.br",
+      "http://localhost:5173", // mantém pra desenvolvimento local
+    ],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // healthcheck
@@ -20,17 +28,18 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-// rotas de auth
+// rotas de autenticação
 app.use("/api/auth", authRoutes);
 
-// rotas de usuários (CRUD básico)
+// rotas CRUD user
 app.use("/api/users", userRoutes);
 
-// fluxo esqueci minha senha
+// fluxo esqueci a senha
 app.use("/api/password-reset", passwordResetRoutes);
 
-// porta
+// porta da API
 const PORT = process.env.PORT || 4000;
+
 app.listen(PORT, () => {
-  console.log(`API rodando na porta ${PORT}`);
+  console.log(`✅ API rodando na porta ${PORT} (env=${process.env.NODE_ENV || "dev"})`);
 });
