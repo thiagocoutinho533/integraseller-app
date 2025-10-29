@@ -1,12 +1,14 @@
 import { useState } from "react";
+import { apiPost } from "../services/api.js";
 
 export default function RegisterPage() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmar, setConfirmar] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     if (!nome || !email || !senha || !confirmar) {
@@ -19,10 +21,29 @@ export default function RegisterPage() {
       return;
     }
 
-    // aqui no futuro vamos chamar POST /auth/register no backend
-    // por agora vamos só simular sucesso e já logar:
-    localStorage.setItem("token", "TOKEN_FAKE_AQUI");
-    window.location.href = "/dashboard";
+    try {
+      setLoading(true);
+
+      // chama backend: POST /auth/register
+      const resp = await apiPost("/auth/register", {
+        name: nome,
+        email,
+        password: senha,
+      });
+
+      // resp esperado: { ok: true, token, user }
+      if (resp && resp.ok && resp.token) {
+        localStorage.setItem("token", resp.token);
+        localStorage.setItem("user", JSON.stringify(resp.user));
+        window.location.href = "/dashboard";
+      } else {
+        alert("Resposta inesperada do servidor");
+      }
+    } catch (err) {
+      alert(err.message || "Falha ao cadastrar");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -39,6 +60,7 @@ export default function RegisterPage() {
               value={nome}
               onChange={e => setNome(e.target.value)}
               placeholder="Seu nome completo"
+              disabled={loading}
             />
           </label>
 
@@ -50,6 +72,7 @@ export default function RegisterPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="seu@email.com"
+              disabled={loading}
             />
           </label>
 
@@ -61,6 +84,7 @@ export default function RegisterPage() {
               value={senha}
               onChange={e => setSenha(e.target.value)}
               placeholder="Crie uma senha"
+              disabled={loading}
             />
           </label>
 
@@ -72,11 +96,20 @@ export default function RegisterPage() {
               value={confirmar}
               onChange={e => setConfirmar(e.target.value)}
               placeholder="Repita a senha"
+              disabled={loading}
             />
           </label>
 
-          <button style={styles.button} type="submit">
-            Cadastrar
+          <button
+            style={{
+              ...styles.button,
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Cadastrando..." : "Cadastrar"}
           </button>
         </form>
 
@@ -145,7 +178,6 @@ const styles = {
     border: "none",
     fontWeight: 600,
     fontSize: "1rem",
-    cursor: "pointer",
   },
   linksArea: {
     marginTop: "1.25rem",

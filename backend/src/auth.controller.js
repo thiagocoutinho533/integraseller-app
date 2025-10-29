@@ -1,104 +1,73 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-import { validateRegisterBody, validateLoginBody } from './validators.js';
-
-const prisma = new PrismaClient();
-
-function generateToken(user) {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: '8h' }
-  );
-}
+import { validationResult } from "express-validator";
+import {
+  createUser,
+  findUserByEmail,
+  generateToken,
+  sanitizeUser,
+} from "./auth.service.js";
+import bcrypt from "bcryptjs";
 
 export async function register(req, res) {
-  try {
-    const { name, email, password } = req.body;
-
-    // valida request
-    const invalid = validateRegisterBody({ name, email, password });
-    if (invalid) {
-      return res.status(400).json({ error: invalid });
-    }
-
-    // já existe email?
-    const exists = await prisma.user.findUnique({ where: { email } });
-    if (exists) {
-      return res.status(400).json({ error: 'E-mail já cadastrado' });
-    }
-
-    // hash da senha
-    const hashed = await bcrypt.hash(password, 10);
-
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashed,
-      },
-    });
-
-    const token = generateToken(user);
-
-    return res.json({
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-      token,
-    });
-
-  } catch (err) {
-    console.error('register error:', err);
-    return res.status(500).json({ error: 'Erro interno' });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ ok: false, errors: errors.array() });
   }
+
+  const { name, email, password } = req.body;
+
+  // já existe?
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    return res
+      .status(409)
+      .json({ ok: false, msg: "E-mail já cadastrado" });
+  }
+
+  const newUser = await createUser({ name, email, password });
+  const token = generateToken(newUser);
+
+  res.json({
+    ok: true,
+    token,
+    user: sanitizeUser(newUser),
+  });
 }
 
 export async function login(req, res) {
-  try {
-    const { email, password } = req.body;
-
-    // valida request
-    const invalid = validateLoginBody({ email, password });
-    if (invalid) {
-      return res.status(400).json({ error: invalid });
-    }
-
-    // busca user
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
-    }
-
-    // confere senha
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
-    }
-
-    const token = generateToken(user);
-
-    return res.json({
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-      token,
-    });
-
-  } catch (err) {
-    console.error('login error:', err);
-    return res.status(500).json({ error: 'Erro interno' });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ ok: false, errors: errors.array() });
   }
+
+  const { email, password } = req.body;
+
+  const user = await findUserByEmail(email);
+  if (!user) {
+    return res
+      .status(401)
+      .json({ ok: false, msg: "Credenciais inválidas" });
+  }
+
+  const okPass = await bcrypt.compare(password, user.password_hash);
+  if (!okPass) {
+    return res
+      .status(401)
+      .json({ ok: false, msg: "Credenciais inválidas" });
+  }
+
+  const token = generateToken(user);
+
+  res.json({
+    ok: true,
+    token,
+    user: sanitizeUser(user),
+  });
+}
+
+export async function me(req, res) {
+  // req.user vem do middleware de auth
+  res.json({
+    ok: true,
+    user: sanitizeUser(req.user),
+  });
 }

@@ -1,26 +1,32 @@
 import jwt from "jsonwebtoken";
+import { pool } from "./db.js";
 
-export function authMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ message: "Token não enviado" });
-  }
-
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2) {
-    return res.status(401).json({ message: "Token inválido (formato)" });
-  }
-
-  const [scheme, token] = parts;
-  if (!/^Bearer$/i.test(scheme)) {
-    return res.status(401).json({ message: "Token inválido (scheme)" });
-  }
-
+export async function requireAuth(req, res, next) {
   try {
+    const auth = req.headers.authorization || "";
+    const token = auth.startsWith("Bearer ")
+      ? auth.slice(7)
+      : null;
+
+    if (!token) {
+      return res.status(401).json({ ok: false, msg: "Token ausente" });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { userId, email, role }
+
+    // buscar usuário atual
+    const result = await pool.query(
+      `SELECT id, name, email FROM users WHERE id = $1 LIMIT 1`,
+      [decoded.sub]
+    );
+    const user = result.rows[0];
+    if (!user) {
+      return res.status(401).json({ ok: false, msg: "Usuário não encontrado" });
+    }
+
+    req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Token inválido" });
+    return res.status(401).json({ ok: false, msg: "Token inválido" });
   }
 }

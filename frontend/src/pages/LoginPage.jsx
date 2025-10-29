@@ -1,20 +1,40 @@
 import { useState } from "react";
+import { apiPost } from "../services/api.js";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
-    // por enquanto vamos só "fingir" login
-    // depois vamos trocar por chamada à API nova
-    if (email && senha) {
-      // salva token fake no localStorage
-      localStorage.setItem("token", "TOKEN_FAKE_AQUI");
-      window.location.href = "/dashboard";
-    } else {
+    if (!email || !senha) {
       alert("Preencha e-mail e senha");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // chama o backend
+      const resp = await apiPost("/auth/login", {
+        email,
+        password: senha,
+      });
+
+      // resp esperado: { ok: true, token, user: {...} }
+      if (resp && resp.ok && resp.token) {
+        localStorage.setItem("token", resp.token);
+        localStorage.setItem("user", JSON.stringify(resp.user));
+        window.location.href = "/dashboard";
+      } else {
+        alert("Resposta inesperada do servidor");
+      }
+    } catch (err) {
+      alert(err.message || "Falha no login");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -32,6 +52,7 @@ export default function LoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="seu@email.com"
+              disabled={loading}
             />
           </label>
 
@@ -43,22 +64,31 @@ export default function LoginPage() {
               value={senha}
               onChange={e => setSenha(e.target.value)}
               placeholder="••••••••"
+              disabled={loading}
             />
           </label>
 
-          <button style={styles.button} type="submit">
-            Entrar
+          <button
+            style={{
+              ...styles.button,
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
 
-        
-          <div style={{ marginTop: "0.5rem", fontSize: 14, textAlign: "center" }}>
-          <a href="/register" style={{ color: "#6366f1" }}>Criar uma conta</a>
+        <div style={{ marginTop: "0.5rem", fontSize: 14, textAlign: "center" }}>
+          <a href="/register" style={{ color: "#6366f1" }}>
+            Criar uma conta
+          </a>
         </div>
         <div style={{ marginTop: "1rem", fontSize: 14, textAlign: "center" }}>
           <a href="#" style={{ color: "#6366f1" }}>Esqueci minha senha</a>
         </div>
-      
       </div>
     </div>
   );
@@ -119,6 +149,5 @@ const styles = {
     border: "none",
     fontWeight: 600,
     fontSize: "1rem",
-    cursor: "pointer",
   },
 };

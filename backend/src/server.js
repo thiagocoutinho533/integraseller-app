@@ -1,23 +1,24 @@
+// server.js
+import "dotenv/config.js"; // mantém
 import express from "express";
+import cors from "cors";
 import authRoutes from "./auth.routes.js";
-import userRoutes from "./user.routes.js";
-import passwordResetRoutes from "./passwordReset.routes.js";
 
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 
-// 🔥 rota de saúde da API (debug Nginx / PM2 / etc)
-app.get("/health", (req, res) => {
+// rota health (pra monitor / nginx / uptime)
+app.get("/api/health", (req, res) => {
   res.json({ ok: true, msg: "API rodando 👌" });
 });
 
-// rotas reais da aplicação
-app.use("/auth", authRoutes);
-app.use("/users", userRoutes);
-app.use("/password-reset", passwordResetRoutes);
+// rotas de auth (cadastrar, logar, etc)
+app.use("/api/auth", authRoutes);
 
 // porta
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`API escutando na porta ${PORT}`);
+  console.log(`API ouvindo na porta ${PORT}`);
 });

@@ -1,31 +1,61 @@
-// base do backend em dev
-export const API_URL = 'http://localhost:4000/api';
+const API_BASE = "/api"; // nginx já proxy /api -> backend
 
-export async function apiPost(path, data) {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
+function getAuthHeader() {
+  const token = localStorage.getItem("token");
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
+}
+
+export async function apiPost(path, bodyObj) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(bodyObj),
   });
 
-  const json = await res.json();
-  if (!res.ok) throw json;
-  return json;
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+
+  if (!res.ok) {
+    // tenta mensagem amigável do backend
+    const msg =
+      (data && data.msg) ||
+      (data && data.error) ||
+      "Erro ao comunicar com servidor";
+    throw new Error(msg);
+  }
+
+  return data;
 }
 
 export async function apiGet(path) {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...getAuthHeader(),
     },
   });
 
-  const json = await res.json();
-  if (!res.ok) throw json;
-  return json;
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+
+  if (!res.ok) {
+    const msg =
+      (data && data.msg) ||
+      (data && data.error) ||
+      "Erro ao comunicar com servidor";
+    throw new Error(msg);
+  }
+
+  return data;
 }

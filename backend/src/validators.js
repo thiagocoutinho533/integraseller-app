@@ -1,11 +1,20 @@
-export function validateRegisterBody({ name, email, password }) {
-  if (!name || !email || !password) return 'Campos obrigatórios ausentes';
-  if (password.length < 6) return 'Senha muito curta';
-  // validações simples, podemos refinar depois
-  return null;
+// /var/www/integraseller-app/backend/src/validators.js
+
+export function requireFields(fields, reqBody) {
+  for (const field of fields) {
+    if (
+      reqBody[field] === undefined ||
+      reqBody[field] === null ||
+      reqBody[field] === ""
+    ) {
+      throw new Error(`Campo obrigatório ausente: ${field}`);
+    }
+  }
 }
 
-export function validateLoginBody({ email, password }) {
-  if (!email || !password) return 'E-mail e senha são obrigatórios';
-  return null;
+export function validateEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!re.test(String(email).toLowerCase())) {
+    throw new Error("Email inválido");
+  }
 }

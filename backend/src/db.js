@@ -1,3 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import pg from "pg";
+const { Pool } = pg;
 
-export const prisma = new PrismaClient();
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URI,
+});
