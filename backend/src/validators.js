@@ -1,20 +1,43 @@
-// /var/www/integraseller-app/backend/src/validators.js
+// src/validators.js
+import { body, validationResult } from "express-validator";
 
-export function requireFields(fields, reqBody) {
-  for (const field of fields) {
-    if (
-      reqBody[field] === undefined ||
-      reqBody[field] === null ||
-      reqBody[field] === ""
-    ) {
-      throw new Error(`Campo obrigatório ausente: ${field}`);
-    }
+/**
+ * Gera validações para checar que os campos existem e não são vazios.
+ * Uso: requireFields(["email", "password"])
+ */
+export function requireFields(fields = []) {
+  if (!Array.isArray(fields)) {
+    throw new TypeError("requireFields espera um array de strings");
   }
+  const chain = fields.map((f) =>
+    body(f).exists({ checkFalsy: true }).withMessage(`${f} é obrigatório`)
+  );
+
+  // middleware que aplica e retorna 400 se tiver erro
+  return [
+    ...chain,
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ ok: false, errors: errors.array() });
+      }
+      next();
+    },
+  ];
 }
 
-export function validateEmail(email) {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!re.test(String(email).toLowerCase())) {
-    throw new Error("Email inválido");
-  }
+/**
+ * Valida formato de email no campo indicado (default: "email")
+ */
+export function validateEmail(field = "email") {
+  return [
+    body(field).isEmail().withMessage("E-mail inválido"),
+    (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ ok: false, errors: errors.array() });
+      }
+      next();
+    },
+  ];
 }
