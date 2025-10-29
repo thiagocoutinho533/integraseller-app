@@ -1,12 +1,11 @@
 // src/App.jsx
-import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
-import LoginPage from "./pages/LoginPage.jsx";        // default import
-import RegisterPage from "./pages/RegisterPage.jsx";  // default import
-import DashboardPage from "./pages/DashboardPage.jsx";// default import
+import LoginPage from "./pages/LoginPage.jsx";
+import RegisterPage from "./pages/RegisterPage.jsx";
+import DashboardPage from "./pages/DashboardPage.jsx";
 import { isAuthenticated } from "./services/auth.js";
 
+// componentes auxiliares (sem export default)
 function PrivateRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />;
 }
@@ -21,23 +20,39 @@ function LandingRedirect() {
     : <Navigate to="/login" replace />;
 }
 
+// único default do arquivo
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingRedirect />} />
 
-        <Route path="/login" element={
-          <PublicOnlyRoute><LoginPage /></PublicOnlyRoute>
-        } />
+        <Route
+          path="/login"
+          element={
+            <PublicOnlyRoute>
+              <LoginPage />
+            </PublicOnlyRoute>
+          }
+        />
 
-        <Route path="/register" element={
-          <PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>
-        } />
+        <Route
+          path="/register"
+          element={
+            <PublicOnlyRoute>
+              <RegisterPage />
+            </PublicOnlyRoute>
+          }
+        />
 
-        <Route path="/dashboard" element={
-          <PrivateRoute><DashboardPage /></PrivateRoute>
-        } />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <DashboardPage />
+            </PrivateRoute>
+          }
+        />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -2,6 +2,7 @@ import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { requireFields, validateEmail } from "./validators.js";
 
+
 const router = Router();
 
 // Usuário de teste (até ligar com DB/Prisma)
