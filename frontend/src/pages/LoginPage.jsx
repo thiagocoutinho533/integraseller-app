@@ -51,10 +51,14 @@ export default function LoginPage() {
           </button>
         </form>
 
+        
+          <div style={{ marginTop: "0.5rem", fontSize: 14, textAlign: "center" }}>
+          <a href="/register" style={{ color: "#6366f1" }}>Criar uma conta</a>
+        </div>
         <div style={{ marginTop: "1rem", fontSize: 14, textAlign: "center" }}>
           <a href="#" style={{ color: "#6366f1" }}>Esqueci minha senha</a>
-                 <a href="#" style={{ color: "#6366f1" }}>Cadastre-se</a>
         </div>
+      
       </div>
     </div>
   );

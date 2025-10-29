@@ -1,20 +1,26 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 export function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Token não enviado' });
+  if (!authHeader) {
+    return res.status(401).json({ message: "Token não enviado" });
+  }
 
-  const [scheme, token] = authHeader.split(' ');
-  if (scheme !== 'Bearer' || !token) {
-    return res.status(401).json({ error: 'Token mal formatado' });
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2) {
+    return res.status(401).json({ message: "Token inválido (formato)" });
+  }
+
+  const [scheme, token] = parts;
+  if (!/^Bearer$/i.test(scheme)) {
+    return res.status(401).json({ message: "Token inválido (scheme)" });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // decoded tem id, email, name, role
-    req.user = decoded;
+    req.user = decoded; // { userId, email, role }
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Token inválido' });
+    return res.status(401).json({ message: "Token inválido" });
   }
 }
