@@ -1,9 +1,13 @@
-export function saveSession({ token, user }) {
-  localStorage.setItem("token", token);
-  localStorage.setItem("user", JSON.stringify(user || null));
-}
+const TOKEN_KEY = "token";
 
 export function isAuthenticated() {
-  const t = localStorage.getItem("token");
-  return Boolean(t && t !== "TOKEN_FAKE_AQUI");
+  return !!localStorage.getItem(TOKEN_KEY);
+}
+
+export function saveToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function logout() {
+  localStorage.removeItem(TOKEN_KEY);
 }
