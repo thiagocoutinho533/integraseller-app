@@ -10,18 +10,20 @@ function PrivateRoute({ children }) {
 function PublicOnlyRoute({ children }) {
   return isAuthenticated() ? <Navigate to="/dashboard" replace /> : children;
 }
+function LandingRedirect() {
+  return isAuthenticated()
+    ? <Navigate to="/dashboard" replace />
+    : <Navigate to="/login" replace />;
+}
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Abre primeiro a tela de login sempre que a aplicação for acessada na raiz */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
-        <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
-        <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<LandingRedirect />} />
+      <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+      <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
+      <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
