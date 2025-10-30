@@ -1,22 +1,23 @@
-// backend/src/validators.js
-export function requireFields(fields = []) {
+// src/validators.js
+export function requireFields(...fields) {
   return (req, res, next) => {
-    // garante array
-    const list = Array.isArray(fields) ? fields : [];
-    for (const f of list) {
+    for (const f of fields) {
       const v = req.body?.[f];
-      if (v === undefined || v === null || v === "") {
-        return res.status(400).json({ error: `Campo obrigatório: ${f}` });
+      if (v === undefined || v === null || String(v).trim() === "") {
+        return res.status(400).json({ error: `Campo '${f}' é obrigatório.` });
       }
     }
     next();
   };
 }
 
-export function validateEmail(req, res, next) {
-  const { email } = req.body || {};
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).json({ error: "E-mail inválido" });
-  }
-  next();
+export function validateEmail(field = "email") {
+  return (req, res, next) => {
+    const value = req.body?.[field];
+    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value || "");
+    if (!ok) {
+      return res.status(400).json({ error: `Campo '${field}' inválido.` });
+    }
+    next();
+  };
 }

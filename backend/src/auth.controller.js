@@ -8,6 +8,8 @@ function normalizeEmail(email) {
   return (email || "").trim().toLowerCase();
 }
 
+
+
 export async function register(req, res) {
   try {
     const { nome, email } = req.body;
