@@ -5,28 +5,24 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import { isAuthenticated } from "./services/auth.js";
 
-// componentes auxiliares (sem export default)
+// helpers de rota (não exporte default aqui)
 function PrivateRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />;
 }
-
 function PublicOnlyRoute({ children }) {
   return isAuthenticated() ? <Navigate to="/dashboard" replace /> : children;
 }
-
 function LandingRedirect() {
   return isAuthenticated()
     ? <Navigate to="/dashboard" replace />
     : <Navigate to="/login" replace />;
 }
 
-// único default do arquivo
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingRedirect />} />
-
         <Route
           path="/login"
           element={
@@ -35,7 +31,6 @@ export default function App() {
             </PublicOnlyRoute>
           }
         />
-
         <Route
           path="/register"
           element={
@@ -44,7 +39,6 @@ export default function App() {
             </PublicOnlyRoute>
           }
         />
-
         <Route
           path="/dashboard"
           element={
@@ -53,7 +47,6 @@ export default function App() {
             </PrivateRoute>
           }
         />
-
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
