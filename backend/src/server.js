@@ -7,10 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, msg: "API rodando 👌" });
-});
-
+app.get("/health", (req, res) => res.json({ ok: true, msg: "API rodando 👌" }));
 app.use("/auth", authRoutes);
 
 const PORT = process.env.PORT || 4000;

@@ -1,39 +1,26 @@
+// frontend/src/pages/LoginPage.jsx
 import { useState } from "react";
+import { apiLogin } from "../services/api";
+import { saveToken } from "../services/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!email || !senha) {
-      alert("Preencha e-mail e senha");
-      return;
-    }
-
     try {
-      setLoading(true);
-      const resp = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: senha }),
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        alert(err?.msg || "Login inválido");
+      const r = await apiLogin({ email, senha });
+      const data = await r.json();
+      if (!r.ok) {
+        alert(data?.msg || "Credenciais inválidas");
         return;
       }
-
-      const data = await resp.json();
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      saveToken(data.token);
       window.location.href = "/dashboard";
     } catch (err) {
-      alert("Erro de rede. Tente novamente.");
-    } finally {
-      setLoading(false);
+      console.error(err);
+      alert("Falha ao comunicar com o servidor.");
     }
   }
 
@@ -41,6 +28,7 @@ export default function LoginPage() {
     <div style={styles.wrapper}>
       <div style={styles.card}>
         <h1 style={styles.title}>Entrar</h1>
+
         <form onSubmit={handleSubmit} style={styles.form}>
           <label style={styles.label}>
             E-mail
@@ -64,20 +52,26 @@ export default function LoginPage() {
             />
           </label>
 
-          <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
-          </button>
+          <button style={styles.button} type="submit">Entrar</button>
         </form>
 
-        <div style={{ marginTop: "0.5rem", fontSize: 14, textAlign: "center" }}>
+        <div style={{ marginTop: 8, textAlign: "center" }}>
           <a href="/register" style={{ color: "#6366f1" }}>Criar uma conta</a>
         </div>
-        <div style={{ marginTop: "1rem", fontSize: 14, textAlign: "center" }}>
-          <a href="#" style={{ color: "#6366f1" }}>Esqueci minha senha</a>
+        <div style={{ marginTop: 8, textAlign: "center" }}>
+          <a href="/forgot" style={{ color: "#6366f1" }}>Esqueci minha senha</a>
         </div>
       </div>
     </div>
   );
 }
 
-const styles = { /* ... seus estilos iguais ... */ };
+const styles = {
+  wrapper: { minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", padding: 32 },
+  card: { width: "100%", maxWidth: 360, background: "#fff", borderRadius: 12, boxShadow: "0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04)", padding: 24, border: "1px solid #e2e8f0" },
+  title: { fontSize: 24, fontWeight: 600, color: "#0f172a", textAlign: "center", marginBottom: 16 },
+  form: { display: "flex", flexDirection: "column", gap: 12 },
+  label: { fontSize: 14, fontWeight: 500, color: "#1e293b", display: "flex", flexDirection: "column", gap: 6 },
+  input: { height: 40, borderRadius: 8, border: "1px solid #cbd5e1", padding: "0 12px", fontSize: 15, outline: "none" },
+  button: { height: 42, borderRadius: 8, background: "#2563eb", color: "#fff", border: "none", fontWeight: 600, fontSize: 16, cursor: "pointer" },
+};

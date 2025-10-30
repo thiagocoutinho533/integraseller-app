@@ -1,13 +1,19 @@
-const API_BASE = "/api";
+const BASE = "/api";
 
-export async function apiPost(path, body) {
-  const res = await fetch(`${API_BASE}${path}`, {
+export async function apiLogin({ email, senha }) {
+  const r = await fetch(`${BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    credentials: "same-origin",
+    body: JSON.stringify({ email, senha })
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.msg || "Credenciais inválidas");
-  return data;
+  return r;
+}
+
+export async function apiRegister({ nome, email, senha }) {
+  const r = await fetch(`${BASE}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nome, email, senha })
+  });
+  return r;
 }
