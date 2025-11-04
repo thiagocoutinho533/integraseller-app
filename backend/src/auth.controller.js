@@ -1,75 +1,44 @@
-import { prisma } from "./db.js";            // ajuste seu import do prisma
-import bcrypt from "bcryptjs";
+// backend/src/auth.controller.js
+import { prisma } from "./db.js";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
-function normalizeEmail(email) {
-  return (email || "").trim().toLowerCase();
-}
-
-
-
 export async function register(req, res) {
   try {
-    const { nome, email } = req.body;
-    const passRaw = req.body.senha ?? req.body.password;
+    const { nome, email, senha } = req.body;
 
-    if (!nome || !email || !passRaw) {
-      return res.status(400).json({ ok: false, msg: "Campos obrigatórios" });
-    }
+    const existe = await prisma.user.findUnique({ where: { email } });
+    if (existe) return res.status(409).json({ error: "E-mail já cadastrado" });
 
-    const emailNorm = normalizeEmail(email);
-    const exists = await prisma.user.findUnique({ where: { email: emailNorm } });
-    if (exists) {
-      return res.status(409).json({ ok: false, msg: "E-mail já cadastrado" });
-    }
-
-    const hash = await bcrypt.hash(passRaw, 10);
+    const hash = await bcrypt.hash(senha, 10);
     const user = await prisma.user.create({
-      data: { nome, email: emailNorm, senhaHash: hash }, // use o nome do campo de senha que estiver no seu schema
-      select: { id: true, nome: true, email: true }
+      data: { nome, email, senhaHash: hash },
+      select: { id: true, nome: true, email: true, createdAt: true },
     });
 
-    return res.status(201).json({ ok: true, user });
+    return res.status(201).json(user);
   } catch (err) {
-    console.error("REGISTER ERR:", err);
-    return res.status(500).json({ ok: false, msg: "Erro interno" });
+    console.error(err);
+    return res.status(500).json({ error: "Erro ao registrar" });
   }
 }
 
 export async function login(req, res) {
   try {
-    const { email } = req.body;
-    const passRaw = req.body.senha ?? req.body.password;
+    const { email, senha } = req.body;
 
-    if (!email || !passRaw) {
-      return res.status(400).json({ ok: false, msg: "E-mail e senha são obrigatórios" });
-    }
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(401).json({ error: "Credenciais inválidas" });
 
-    const emailNorm = normalizeEmail(email);
-    const user = await prisma.user.findUnique({
-      where: { email: emailNorm },
-      select: { id: true, nome: true, email: true, senhaHash: true } // ajuste pro campo certo
-    });
+    const ok = await bcrypt.compare(senha, user.senhaHash);
+    if (!ok) return res.status(401).json({ error: "Credenciais inválidas" });
 
-    if (!user) {
-      return res.status(401).json({ ok: false, msg: "Credenciais inválidas" });
-    }
-
-    const ok = await bcrypt.compare(passRaw, user.senhaHash);
-    if (!ok) {
-      return res.status(401).json({ ok: false, msg: "Credenciais inválidas" });
-    }
-
-    const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "7d" });
-    return res.json({
-      ok: true,
-      token,
-      user: { id: user.id, nome: user.nome, email: user.email }
-    });
+    const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "12h" });
+    return res.json({ token, user: { id: user.id, nome: user.nome, email: user.email } });
   } catch (err) {
-    console.error("LOGIN ERR:", err);
-    return res.status(500).json({ ok: false, msg: "Erro interno" });
+    console.error(err);
+    return res.status(500).json({ error: "Erro ao autenticar" });
   }
 }
